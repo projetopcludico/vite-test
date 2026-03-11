@@ -9,9 +9,21 @@ export const useAplicationStore = defineStore('aplicationStore', () => {
     const currentDificulty = ref("");
     const countResponses = ref(0);
 
+    function setDificulty(dificulty) {
+        if(typeof dificulty === 'string' && dificulty) {
+            currentDificulty.value = dificulty;
+        }
+    }
+
+    function incrementResponse() {
+        countResponses.value++
+    }
+
     return {
         aplication,
         currentDificulty,
-        countResponses
+        countResponses,
+        setDificulty,
+        incrementResponse
     }
 })

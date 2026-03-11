@@ -1,56 +1,32 @@
 import { createRouter, createWebHistory } from "vue-router";
 
 const routes = [
-    {
-        path: '/',
-        name: 'home-view',
-        component: () => import('../views/HomeView.vue'),
-        meta: {
-            title: 'Home',
-            isView: true,
-        }
+  {
+    path: "/",
+    name: "home",
+    component: () => import("../views/HomeView.vue"),
+  },
+  {
+    path: "/game/:theme/:dificulty",
+    name: "game",
+    component: () => import('../views/GameView.vue'),
+    beforeEnter: (to) => {
+      const validThemes = ["forms", "sounds", "numbers"];
+      const validDifficulties = ["easy", "medium", "hard"];
+
+      if (!validThemes.includes(to.params.theme)) {
+        return { name: "not-found" };
+      }
+      if (!validDifficulties.includes(to.params.dificulty)) {
+        return { name: "not-found" };
+      }
     },
-    {
-        path: '/forms',
-        name: 'forms-view',
-        component: () => import('../views/FormView.vue'),
-        meta: {
-            title: 'Jogo de Formas',
-            isView: true,
-        }
-    },
-    {
-        path: '/sounds',
-        name: 'sounds-view',
-        component: () => import('../views/SoundView.vue'),
-        meta: {
-            title: 'Jogo de Sons',
-            isView: true,
-        }
-    },
-    {
-        path: '/numbers',
-        name: 'numbers-view',
-        component: () => import('../views/NumberView.vue'),
-        meta: {
-            title: 'Jogo de Números',
-            isView: true,
-        }
-    },
-    {
-        path: '/forms/game/:numberForms/:size/:discover/:timeLimit',
-        name: 'form-game',
-        component: () => import('../views/games/FormGame.vue'),
-        meta: {
-            isView: false,
-        },
-        props: true
-    },
-]
+  },
+];
 
 const router = createRouter({
-    routes,
-    history: createWebHistory()
-})
+  routes,
+  history: createWebHistory(),
+});
 
 export default router;
