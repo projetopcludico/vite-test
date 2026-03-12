@@ -166,22 +166,57 @@
         <!-- Tela de conclusão -->
         <transition name="complete">
           <div v-if="sequenceStore.isComplete"
-            class="mt-4 rounded-3xl p-6 text-center space-y-3 border border-white/10"
+            class="mt-4 rounded-3xl p-6 text-center space-y-4 border border-white/10"
             :class="accentBgLight"
           >
-            <div class="text-4xl">🎉</div>
-            <p class="text-xl font-black">Sequência completa!</p>
-            <p class="text-slate-300 text-sm">
-              Você acertou <strong :class="accentText">{{ sequenceStore.countResponses }}</strong> de
-              <strong>{{ totalSlots }}</strong> slots.
-            </p>
-            <button
-              @click="restart"
-              class="mt-2 px-6 py-3 rounded-2xl font-bold text-sm transition-all hover:scale-105 text-white"
-              :class="accentBg"
+            <!-- Emoji muda conforme o contexto -->
+            <div class="text-4xl">
+              {{ isLastTheme && isLastDifficulty ? '🏆' : '🎉' }}
+            </div>
+
+            <div>
+              <p class="text-xl font-black">Sequência completa!</p>
+              <p class="text-slate-300 text-sm mt-1">
+                Você acertou
+                <strong :class="accentText">{{ sequenceStore.countResponses }}</strong> de
+                <strong>{{ totalSlots }}</strong> slots.
+              </p>
+            </div>
+
+            <!-- Tag de próximo destino -->
+            <div v-if="nextRoute.isNextTheme"
+              class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/8 border border-white/10 text-xs text-slate-400"
             >
-              Jogar novamente
-            </button>
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+              </svg>
+              Novo tema desbloqueado
+            </div>
+
+            <!-- Botões -->
+            <div class="flex flex-col gap-2 pt-1">
+              <!-- Avançar / próximo tema -->
+              <RouterLink
+                :to="nextRoute.path"
+                class="flex items-center justify-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm
+                       transition-all hover:scale-105 text-white"
+                :class="accentBg"
+              >
+                {{ nextRoute.label }}
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                </svg>
+              </RouterLink>
+
+              <!-- Jogar novamente (sempre disponível) -->
+              <button
+                @click="restart"
+                class="px-6 py-3 rounded-2xl font-semibold text-sm transition-all
+                       hover:bg-white/10 text-slate-400 hover:text-white border border-white/10"
+              >
+                Jogar novamente
+              </button>
+            </div>
           </div>
         </transition>
 
@@ -191,8 +226,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, reactive } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, computed, onMounted, reactive, watch } from 'vue'
+import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useAplicationStore } from '../stores/aplication'
 import { useSequenceStore } from '../stores/sequence'
 
@@ -231,6 +266,29 @@ const difficultyLabel = computed(() => difficultyData.value?.title ?? difficulty
 const totalSlots = computed(() =>
   sequenceStore.correctResponses.filter(v => v !== null).length
 )
+
+// ─── Navegação de progressão ───────────────────────────────────────────────
+const DIFFICULTIES = ['easy', 'medium', 'hard']
+const THEMES       = ['forms', 'sounds', 'numbers']
+
+const isLastDifficulty = computed(() => difficulty.value === 'hard')
+const isLastTheme      = computed(() => theme.value === 'numbers')
+
+const nextRoute = computed(() => {
+  if (!isLastDifficulty.value) {
+    // Próxima dificuldade, mesmo tema
+    const nextDiff = DIFFICULTIES[DIFFICULTIES.indexOf(difficulty.value) + 1]
+    return { path: `/game/${theme.value}/${nextDiff}`, label: `Avançar para ${({ easy: 'Médio', medium: 'Difícil' }[difficulty.value])}`, isNextTheme: false }
+  }
+  if (!isLastTheme.value) {
+    // Próximo tema, dificuldade fácil
+    const nextTheme = THEMES[THEMES.indexOf(theme.value) + 1]
+    const nextThemeLabel = { sounds: 'Sons', numbers: 'Números' }[nextTheme]
+    return { path: `/game/${nextTheme}/easy`, label: `Ir para ${nextThemeLabel}`, isNextTheme: true }
+  }
+  // Fim de tudo — volta para home
+  return { path: '/', label: 'Voltar ao início', isNextTheme: false }
+})
 
 // ─── Classes de tema ───────────────────────────────────────────────────────
 const themeClass = computed(() => ({
@@ -324,6 +382,15 @@ function restart() {
 }
 
 onMounted(mountGame)
+
+watch(
+  () => [route.params.theme, route.params.dificulty],
+  () => {
+    ready.value = false
+    error.value = ''
+    setTimeout(mountGame, 100)
+  }
+)
 </script>
 
 <style scoped>
